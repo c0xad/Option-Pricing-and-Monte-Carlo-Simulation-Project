@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 from variance_reduction import (
     AntitheticVariates, ControlVariates, ImportanceSampling, StratifiedSampling
 )
-from stochastic_processes import GeometricBrownianMotion, HestonModel
+from stochastic_processes import GeometricBrownianMotion, HestonModel, JumpDiffusionProcess
 from option_models import AmericanOption
 
 class MonteCarloSimulator:
@@ -44,7 +44,7 @@ class MonteCarloSimulator:
             price: Estimated option price.
             std_error: Standard error of the estimate.
         """
-        if isinstance(self.process, GeometricBrownianMotion) or isinstance(self.process, HestonModel):
+        if isinstance(self.process, (GeometricBrownianMotion, HestonModel, JumpDiffusionProcess)):
             S = self.process.generate_paths(S0=self.S0, T=self.T, N=self.N, M=self.M, level=level, Z=Z)
         else:
             raise NotImplementedError("Stochastic process not implemented.")

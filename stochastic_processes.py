@@ -84,3 +84,35 @@ class HestonModel(StochasticProcess):
             S[:, t] = S[:, t-1] * np.exp((self.mu - 0.5 * v_prev) * dt + 
                                          np.sqrt(v_prev * dt) * Z2)
         return S
+
+class JumpDiffusionProcess(StochasticProcess):
+    def __init__(self, mu, sigma, lam, kappa, delta, r=0.0, seed=None):
+        self.mu = mu
+        self.sigma = sigma
+        self.lam = lam
+        self.kappa = kappa
+        self.delta = delta
+        self.r = r
+        self.seed = seed
+
+    def generate_paths(self, S0, T, N, M, level=0, Z=None):
+        dt = T / N
+        np.random.seed(self.seed)
+        size = (M, N)
+        
+        # Simulate Poisson jumps
+        poisson_random = np.random.poisson(self.lam * dt, size)
+        jump_sizes = np.random.normal(self.kappa, self.delta, size)
+        jumps = poisson_random * (np.exp(jump_sizes) - 1)
+        
+        # Simulate GBM
+        if Z is None:
+            Z = np.random.standard_normal(size)
+        drift = (self.mu - 0.5 * self.sigma ** 2) * dt
+        diffusion = self.sigma * np.sqrt(dt) * Z
+        
+        increments = drift + diffusion + np.log(1 + jumps)
+        log_S = np.log(S0) + np.cumsum(increments, axis=1)
+        S = np.exp(log_S)
+        
+        return np.column_stack((np.full(M, S0), S))

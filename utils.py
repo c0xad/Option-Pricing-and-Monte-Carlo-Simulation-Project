@@ -3,6 +3,7 @@
 from scipy.stats import norm
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def black_scholes_price(option_type, S0, K, T, r, sigma):
     """
@@ -18,14 +19,16 @@ def black_scholes_price(option_type, S0, K, T, r, sigma):
         raise ValueError("Invalid option type. Use 'call' or 'put'.")
     return price
 
-def plot_histogram(payoffs, title='Payoff Distribution'):
-    """
-    Plots a histogram of the payoffs.
-    """
-    plt.figure(figsize=(10,6))
-    plt.hist(payoffs, bins=50, edgecolor='k', alpha=0.7)
+def plot_histogram(data, title, filename=None):
+    plt.figure(figsize=(10, 6))
+    plt.hist(data, bins=50, edgecolor='black')
     plt.title(title)
     plt.xlabel('Payoff')
     plt.ylabel('Frequency')
     plt.grid(True)
-    plt.show()
+    
+    if filename:
+        plt.savefig(os.path.join('results', filename))
+        plt.close()
+    else:
+        plt.show()

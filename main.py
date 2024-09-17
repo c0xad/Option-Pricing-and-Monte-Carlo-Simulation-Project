@@ -1,7 +1,7 @@
 # main.py
 
 import numpy as np
-from stochastic_processes import GeometricBrownianMotion, HestonModel
+from stochastic_processes import GeometricBrownianMotion, HestonModel, JumpDiffusionProcess
 from option_models import (
     EuropeanCallOption, EuropeanPutOption, AsianCallOption, BarrierOption,
     LookbackOption, AmericanOption, RainbowOption, SpreadOption, DigitalOption,
@@ -207,6 +207,29 @@ def main():
     save_line_chart(simulator.get_payoff_distribution(), 'Digital Option - Payoff Distribution', 'digital_option_payoff_distribution.png')
     save_line_chart(simulator.get_price_path(), 'Cliquet Option - Price Path', 'cliquet_option_price_path.png')
     save_line_chart(simulator.get_payoff_distribution(), 'Cliquet Option - Payoff Distribution', 'cliquet_option_payoff_distribution.png')
+
+    # Initialize Jump-Diffusion Process
+    print("\n--- Jump-Diffusion Process Simulation ---")
+    jdp = JumpDiffusionProcess(mu=0.05, sigma=0.2, lam=1, kappa=-0.05, delta=0.1, r=r, seed=42)
+    
+    # Initialize European Call Option with Jump-Diffusion
+    european_call_jd = EuropeanCallOption(K=K)
+    simulator_jd = MonteCarloSimulator(process=jdp, option=european_call_jd, T=T, N=N, M=M, r=r, seed=42)
+    simulator_jd.set_initial_price(S0)
+    
+    # Simulate without variance reduction
+    price_jd, std_error_jd = simulator_jd.simulate()
+    print(f"European Call Option Price (Jump-Diffusion): {price_jd:.4f} ± {1.96*std_error_jd:.4f} (95% CI)")
+    
+    # Generate and save charts for Jump-Diffusion
+    save_line_chart(simulator_jd.get_price_path(), 'Jump-Diffusion - Price Path', 'jump_diffusion_price_path.png')
+    save_line_chart(simulator_jd.get_payoff_distribution(), 'Jump-Diffusion - Payoff Distribution', 'jump_diffusion_payoff_distribution.png')
+
+    # Plot payoff distribution for Jump-Diffusion
+    S_jd = jdp.generate_paths(S0=S0, T=T, N=N, M=M, level=0)
+    payoffs_jd = european_call_jd.payoff(S_jd)
+    discounted_payoffs_jd = np.exp(-r*T) * payoffs_jd
+    plot_histogram(discounted_payoffs_jd, title='Jump-Diffusion European Call Option Payoff Distribution', filename='jump_diffusion_payoff_histogram.png')
 
 def save_line_chart(data, title, filename):
     plt.figure(figsize=(10, 6))
