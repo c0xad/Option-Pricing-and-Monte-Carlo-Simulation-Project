@@ -11,7 +11,7 @@ class MLMC_Simulator:
     """
     Multi-Level Monte Carlo Simulator for option pricing.
     """
-    def __init__(self, process, option, T, N, M0, L, r=0.0, seed=None):
+    def __init__(self, process, option, T, N, M0, L, r, seed):
         """
         Initialize the MLMC simulator.
 
@@ -39,6 +39,9 @@ class MLMC_Simulator:
     def set_initial_price(self, S0):
         self.S0 = S0
 
+    def store_convergence_data(self, level, Y_l, V_l):
+        self.convergence_data.append((level, Y_l, V_l))
+
     def mlmc_estimator(self):
         """
         Compute the MLMC estimator using adaptive sampling.
@@ -47,61 +50,63 @@ class MLMC_Simulator:
             price: Estimated option price.
             std_error: Standard error of the estimate.
         """
-        # Initialize estimates
         Y_l = np.zeros(self.L + 1)
         V_l = np.zeros(self.L + 1)
         M_l = np.zeros(self.L + 1, dtype=int)
 
-        # Initial sampling
         for l in range(0, self.L + 1):
-            # Determine number of samples for this level
             M_l[l] = self.M0 * (2**l)
-            # Create a Monte Carlo Simulator for level l
-            simulator = MonteCarloSimulator(
-                process=self.process,
-                option=self.option,
-                T=self.T,
-                N=self.N,
-                M=self.M0,  # Start with M0 samples per level
-                r=self.r,
-                seed=self.seed
-            )
-            simulator.set_initial_price(self.S0)
+            batch_size = min(1000, M_l[l])  # Reduce batch size to 1000
+            num_batches = M_l[l] // batch_size
+            Y_l_sum = 0
+            V_l_sum = 0
 
-            # Simulate Y_l = P_l - P_{l-1}
-            if l == 0:
-                # Coarsest level
-                price_l, _ = simulator.simulate(level=l)
-                Y_l[l] = price_l
-                V_l[l] = price_l**2  # Placeholder for variance
-            else:
-                # Fine level
-                price_l, _ = simulator.simulate(level=l)
-                # Coarse level
-                simulator_coarse = MonteCarloSimulator(
+            for _ in range(num_batches):
+                simulator = MonteCarloSimulator(
                     process=self.process,
                     option=self.option,
                     T=self.T,
-                    N=self.N,
-                    M=self.M0,
+                    N=self.N * (2**l),
+                    M=batch_size,
                     r=self.r,
                     seed=self.seed
                 )
-                simulator_coarse.set_initial_price(self.S0)
-                price_l_minus_1, _ = simulator_coarse.simulate(level=l-1)
-                Y_l[l] = price_l - price_l_minus_1
-                V_l[l] = (Y_l[l])**2  # Placeholder for variance
+                simulator.set_initial_price(self.S0)
+
+                if l == 0:
+                    price_l, _ = simulator.simulate(level=l)
+                    Y_l_batch = price_l
+                    V_l_batch = price_l**2
+                else:
+                    price_l, _ = simulator.simulate(level=l)
+                    simulator_coarse = MonteCarloSimulator(
+                        process=self.process,
+                        option=self.option,
+                        T=self.T,
+                        N=self.N * (2**(l-1)),
+                        M=batch_size,
+                        r=self.r,
+                        seed=self.seed
+                    )
+                    simulator_coarse.set_initial_price(self.S0)
+                    price_l_minus_1, _ = simulator_coarse.simulate(level=l-1)
+                    Y_l_batch = price_l - price_l_minus_1
+                    V_l_batch = Y_l_batch**2
+
+                Y_l_sum += np.sum(Y_l_batch)
+                V_l_sum += np.sum(V_l_batch)
+
+            Y_l[l] = Y_l_sum / M_l[l]
+            V_l[l] = V_l_sum / M_l[l] - Y_l[l]**2
 
             print(f"Initial Sampling - Level {l}: Y_l = {Y_l[l]:.6f}, V_l = {V_l[l]:.6f}, M_l = {M_l[l]}")
+            self.store_convergence_data(l, Y_l[l], V_l[l])
 
-        # Estimate optimal number of samples per level based on variance and cost
-        # For simplicity, we'll proceed without adaptive sampling in this example
+        mlmc_price = np.sum(Y_l)
+        mlmc_variance = np.sum(V_l / M_l)
+        std_error = np.sqrt(mlmc_variance)
 
-        # Compute MLMC estimator
-        price = np.sum(Y_l)
-        std_error = np.sqrt(np.sum(V_l) / np.sum(M_l))
-
-        return price, std_error
+        return mlmc_price, std_error
 
     def get_mlmc_convergence(self):
         return self.convergence_data

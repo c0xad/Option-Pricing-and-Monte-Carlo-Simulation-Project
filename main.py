@@ -198,13 +198,19 @@ def main():
 
 def save_line_chart(data, title, filename):
     plt.figure(figsize=(10, 6))
-    plt.plot(data)
+    if isinstance(data[0], tuple):  # MLMC convergence data
+        levels, Y_l, V_l = zip(*data)
+        plt.plot(levels, Y_l, label='Y_l')
+        plt.plot(levels, V_l, label='V_l')
+        plt.xlabel('Level')
+        plt.legend()
+    else:
+        plt.plot(data)
+        plt.xlabel('Time Steps')
     plt.title(title)
-    plt.xlabel('Time Steps')
     plt.ylabel('Value')
     plt.grid(True)
     
-    # Create results folder if it doesn't exist
     if not os.path.exists('results'):
         os.makedirs('results')
     
