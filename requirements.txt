@@ -1,0 +1,8 @@
+numpy
+scipy
+matplotlib
+joblib
+sobol_seq
+yfinance
+alpha_vantage
+matplotlib
