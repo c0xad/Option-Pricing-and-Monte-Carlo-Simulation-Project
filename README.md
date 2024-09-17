@@ -136,7 +136,7 @@ This will perform option pricing for multiple stocks and option types, displayin
 
 Install the required dependencies using:
 
-pip install numpy pandas matplotlib yfinance
+pip install -r requirements.txt
 
 10. Future Improvements
 -----------------------
@@ -146,4 +146,3 @@ pip install numpy pandas matplotlib yfinance
 - Implement parallel computing for faster simulations
 - Integrate with real-time market data APIs for live trading scenarios
 
-For more details on specific implementations, refer to the individual Python modules in the project.
