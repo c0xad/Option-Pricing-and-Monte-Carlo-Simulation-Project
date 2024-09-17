@@ -155,9 +155,8 @@ def main():
 
     # Implement MLMC
     print("\n--- Multi-Level Monte Carlo (MLMC) Simulation ---")
-    # Define MLMC parameters
-    M0 = 1000    # Initial samples per level
-    L = 5        # Maximum level
+    M0 = 10000    # Increased initial samples per level
+    L = 7        # Increased maximum level
 
     mlmc_simulator = MLMC_Simulator(
         process=gbm,
@@ -167,11 +166,27 @@ def main():
         M0=M0,
         L=L,
         r=r,
-        seed=42
+        seed=42,
+        num_cores=4  # Use 4 cores, or adjust as needed
     )
     mlmc_simulator.set_initial_price(S0)
-    price_mlmc, std_error_mlmc = mlmc_simulator.mlmc_estimator()
+    price_mlmc, std_error_mlmc = mlmc_simulator.mlmc_estimator(epsilon=0.0001, max_iterations=100)
     print(f"European Call Option Price (MLMC): {price_mlmc:.4f} ± {1.96*std_error_mlmc:.4f} (95% CI)")
+
+    # Plot MLMC convergence
+    convergence_data = mlmc_simulator.get_mlmc_convergence()
+    iterations, prices, errors = zip(*convergence_data)
+
+    plt.figure(figsize=(12, 8))
+    plt.errorbar(iterations, prices, yerr=errors, fmt='o-', capsize=5, markersize=4)
+    plt.xlabel('Iteration')
+    plt.ylabel('Option Price')
+    plt.title('MLMC Convergence')
+    plt.grid(True)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.savefig('results/mlmc_convergence.png')
+    plt.close()
 
     # Generate and save charts for other calculations
     save_line_chart(simulator.get_price_path(), 'European Call - Price Path', 'european_call_price_path.png')
@@ -193,22 +208,18 @@ def main():
     save_line_chart(simulator.get_price_path(), 'Cliquet Option - Price Path', 'cliquet_option_price_path.png')
     save_line_chart(simulator.get_payoff_distribution(), 'Cliquet Option - Payoff Distribution', 'cliquet_option_payoff_distribution.png')
 
-    # Generate and save chart for MLMC
-    save_line_chart(mlmc_simulator.get_mlmc_convergence(), 'MLMC Convergence', 'mlmc_convergence.png')
-
 def save_line_chart(data, title, filename):
     plt.figure(figsize=(10, 6))
-    if isinstance(data[0], tuple):  # MLMC convergence data
-        levels, Y_l, V_l = zip(*data)
-        plt.plot(levels, Y_l, label='Y_l')
-        plt.plot(levels, V_l, label='V_l')
-        plt.xlabel('Level')
-        plt.legend()
+    if isinstance(data, list) and len(data) > 0 and isinstance(data[0], tuple):  # MLMC convergence data
+        iterations, prices, errors = zip(*data)
+        plt.errorbar(iterations, prices, yerr=errors, fmt='o-', capsize=5)
+        plt.xlabel('Iteration')
+        plt.ylabel('Option Price')
     else:
         plt.plot(data)
         plt.xlabel('Time Steps')
+        plt.ylabel('Value')
     plt.title(title)
-    plt.ylabel('Value')
     plt.grid(True)
     
     if not os.path.exists('results'):

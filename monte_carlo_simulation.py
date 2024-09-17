@@ -31,20 +31,21 @@ class MonteCarloSimulator:
     def simulate_heston(self, level=0):
         return self.process.generate_paths(S0=self.S0, T=self.T, N=self.N, M=self.M, level=level)
 
-    def simulate(self, method=None, level=0):
+    def simulate(self, method=None, level=0, Z=None):
         """
         Simulate option price using standard Monte Carlo methods.
 
         Parameters:
             method: Variance reduction technique (optional).
             level: Level of discretization for MLMC.
+            Z: Sobol sequence for quasi-random number generation (optional).
 
         Returns:
             price: Estimated option price.
             std_error: Standard error of the estimate.
         """
         if isinstance(self.process, GeometricBrownianMotion) or isinstance(self.process, HestonModel):
-            S = self.process.generate_paths(S0=self.S0, T=self.T, N=self.N, M=self.M, level=level)
+            S = self.process.generate_paths(S0=self.S0, T=self.T, N=self.N, M=self.M, level=level, Z=Z)
         else:
             raise NotImplementedError("Stochastic process not implemented.")
 

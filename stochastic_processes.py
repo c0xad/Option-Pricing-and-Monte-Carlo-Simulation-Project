@@ -14,47 +14,31 @@ class GeometricBrownianMotion(StochasticProcess):
     Geometric Brownian Motion model with support for varying levels.
     """
     def __init__(self, mu, sigma, r=0.0, seed=None):
-        self.mu = mu
-        self.sigma = sigma
+        self.mu = np.atleast_1d(mu)
+        self.sigma = np.atleast_1d(sigma)
         self.r = r
         self.seed = seed
+        self.dim = len(self.mu)
+        self.S0 = None
 
-    def generate_paths(self, S0, T, N, M, level=0):
-        """
-        Generates asset price paths using Geometric Brownian Motion.
+    def generate_paths(self, S0, T, N, M, level=0, Z=None):
+        dt = T / N
+        num_assets = len(S0) if isinstance(S0, (list, np.ndarray)) else 1
         
-        Parameters:
-            S0 (float or array): Initial asset price(s).
-            T (float): Time to maturity.
-            N (int): Number of time steps at the base level.
-            M (int): Number of simulation paths.
-            level (int): MLMC level, higher levels have finer discretization.
+        if Z is None:
+            Z = np.random.normal(0, 1, size=(M, N, num_assets))
+        else:
+            Z = Z.reshape(M, N, num_assets)
         
-        Returns:
-            S (array): Simulated asset price paths.
-        """
-        dt = T / (N * 2**level)
-        num_steps = N * 2**level
-        np.random.seed(self.seed)
-        
-        if isinstance(S0, (int, float)):
-            S0 = [S0]
-        
-        num_assets = len(S0)
-        Z = np.random.standard_normal((M, num_steps, num_assets))
         drift = (self.mu - 0.5 * self.sigma**2) * dt
         diffusion = self.sigma * np.sqrt(dt) * Z
         
-        S = np.zeros((M, num_steps + 1, num_assets))
-        S[:, 0, :] = S0
+        S = np.zeros((M, N + 1, num_assets))
+        S[:, 0] = S0
+        for t in range(1, N + 1):
+            S[:, t] = S[:, t-1] * np.exp(drift + diffusion[:, t-1])
         
-        for i in range(num_steps):
-            S[:, i+1, :] = S[:, i, :] * np.exp(drift + diffusion[:, i, :])
-        
-        if num_assets == 1:
-            S = S.squeeze(axis=2)
-        
-        return S
+        return S.squeeze()
 
 class HestonModel(StochasticProcess):
     """
