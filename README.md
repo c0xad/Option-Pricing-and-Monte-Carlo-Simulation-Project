@@ -1,104 +1,79 @@
-Option Pricing and Monte Carlo Simulation Project
-=================================================
+# Advanced Option Pricing and Monte Carlo Simulation
 
-This project implements various option pricing models and Monte Carlo simulation techniques for financial derivatives. It includes real-time pricing capabilities, multiple option types, and advanced variance reduction methods.
+## Overview
 
-1. Overview
------------
-The project consists of several Python modules that work together to price options and simulate financial markets. The main components are:
+This project implements a comprehensive suite of option pricing models and Monte Carlo simulation techniques for financial derivatives. It includes real-time pricing capabilities, multiple option types, and advanced variance reduction methods. The code is designed for both educational purposes and practical applications in quantitative finance.
 
-- Main script (main.py)
-- Real-time pricing module (real_time_pricing.py)
-- Stochastic processes
-- Option models
-- Monte Carlo simulation
-- Variance reduction techniques
-- Utility functions
+## Key Features
 
-2. Option Types
----------------
-The project supports various option types, including:
+1. Multiple option types (European, American, Asian, Barrier, Lookback, Rainbow, Spread, Digital, Cliquet)
+2. Stochastic processes (Geometric Brownian Motion, Heston Model, Jump-Diffusion)
+3. Monte Carlo simulation with variance reduction techniques
+4. Multi-Level Monte Carlo (MLMC) for improved efficiency
+5. Real-time pricing using market data
+6. Greeks calculation (Delta, Gamma, Vega)
+7. Visualization of price paths and payoff distributions
 
-- European options (Call and Put)
-- American options
-- Asian options
-- Barrier options
-- Lookback options
-- Rainbow options
-- Spread options
-- Digital options
-- Cliquet options
+## Why Use This Code?
 
-3. Pricing Models
------------------
-3.1 Black-Scholes Model
+1. **Comprehensive Coverage**: Implements a wide range of option types and pricing models, making it suitable for various financial instruments.
+2. **Educational Tool**: Serves as a learning resource for students and professionals in quantitative finance.
+3. **Performance Optimization**: Utilizes advanced techniques like MLMC and variance reduction for improved accuracy and efficiency.
+4. **Real-world Application**: Integrates with real-time market data for practical use in trading and risk management.
+5. **Flexibility**: Modular design allows for easy extension and customization.
 
-The Black-Scholes model is implemented for European option pricing. The implementation can be found in
+## Key Formulas and Equations
 
-3.2 Monte Carlo Simulation
+1. **Black-Scholes Formula**:
+   For European options:
+   ```
+   d1 = (ln(S/K) + (r + σ^2/2)T) / (σ√T)
+   d2 = d1 - σ√T
+   Call Price = S * N(d1) - K * e^(-rT) * N(d2)
+   Put Price = K * e^(-rT) * N(-d2) - S * N(-d1)
+   ```
+   Where:
+   - S: Current stock price
+   - K: Strike price
+   - r: Risk-free rate
+   - σ: Volatility
+   - T: Time to maturity
+   - N(): Cumulative standard normal distribution function
 
-Monte Carlo simulation is used for pricing various option types. The general approach is implemented in the MonteCarloSimulator class
+2. **Geometric Brownian Motion**:
+   ```
+   dS = μSdt + σSdW
+   ```
+   Where:
+   - μ: Drift
+   - σ: Volatility
+   - dW: Wiener process increment
 
-4. Stochastic Processes
------------------------
-4.1 Geometric Brownian Motion (GBM)
+3. **Monte Carlo Simulation**:
+   Option Price ≈ e^(-rT) * E[max(S_T - K, 0)]
+   Where E[] is the expected value over simulated paths.
 
-The project uses GBM to model asset price movements. The implementation can be found in the GeometricBrownianMotion class.
+4. **Variance Reduction Techniques**:
+   - Antithetic Variates: E[f(X)] ≈ (f(X) + f(-X)) / 2
+   - Control Variates: Y = X + c(Z - E[Z])
 
-4.2 Jump-Diffusion Process
+5. **Multi-Level Monte Carlo**:
+   E[P_L] = E[P_0] + Σ(E[P_l - P_{l-1}]) for l = 1 to L
 
-A Jump-Diffusion process is also implemented to model sudden price jumps
+6. **Jump-Diffusion Process**:
+   dS = (μ - λκ)Sdt + σSdW + JdN
+   Where:
+   - λ: Jump intensity
+   - κ: Expected jump size
+   - J: Random jump size
+   - dN: Poisson process increment
 
-5. Variance Reduction Techniques
---------------------------------
-The project implements several variance reduction techniques to improve the efficiency of Monte Carlo simulations:
+## Usage
+Install required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-5.1 Antithetic Variates
-5.2 Control Variates
-
-These techniques are implemented in the variance_reduction.py module.
-
-6. Multi-Level Monte Carlo (MLMC)
----------------------------------
-MLMC is implemented to further improve the efficiency of option pricing. The implementation can be found in the MLMC_Simulator class in mlmc.py.
-
-7. Real-time Pricing
---------------------
-The project includes real-time pricing capabilities using market data fetched from Yahoo Finance. The process involves:
-
-1. Fetching historical price data
-2. Calculating historical volatility and drift
-3. Pricing options using the calculated parameters
-
-8. Usage
---------
-To run the option pricing simulations, execute the main.py script:
-
-python main.py
-
-This will perform option pricing for multiple stocks and option types, displaying results and generating charts. 
-
-9. Dependencies
----------------
-- NumPy
-- Pandas
-- Matplotlib
-- yfinance
-
-Install the required dependencies using:
-
-pip install -r requirements.txt
-
-10. Future Improvements
------------------------
-- Implement additional stochastic processes (e.g., Heston model)
-- Add more exotic option types
-- Enhance visualization capabilities
-- Implement parallel computing for faster simulations
-- Integrate with real-time market data APIs for live trading scenarios
-
-11. Contributing
-----------------
-Contributions to this project are welcome. Please fork the repository and submit a pull request with your changes.
-
+Then
+Run the main script to perform option pricing simulations: This will execute various option pricing scenarios and generate results and visualizations in the `results` folder.
 
