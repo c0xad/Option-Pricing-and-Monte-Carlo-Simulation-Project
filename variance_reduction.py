@@ -39,8 +39,27 @@ class ImportanceSampling(VarianceReductionTechnique):
     Importance Sampling Technique.
     Adjusts the drift to focus sampling on important regions.
     """
+    def __init__(self, shift):
+        self.shift = shift
+    
+    def apply(self, Z):
+        return Z + self.shift
+
+    def weight(self, shift, Z):
+        return np.exp(-shift * Z + 0.5 * shift ** 2)
+
     def __init__(self, delta):
         self.delta = delta  # Drift adjustment parameter
+
+    def __init__(self, strata):
+        self.strata = strata
+    
+    def apply(self, M):
+        samples_per_stratum = M // self.strata
+        samples = []
+        for _ in range(self.strata):
+            samples.append(np.random.uniform(0, 1, samples_per_stratum))
+        return np.concatenate(samples)
 
     def apply(self, payoffs, S):
         # Example: Shift the mean of asset paths

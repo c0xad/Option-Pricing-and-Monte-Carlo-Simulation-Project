@@ -44,45 +44,35 @@ class HestonModel(StochasticProcess):
     """
     Heston Stochastic Volatility Model with support for varying levels.
     """
-    def __init__(self, mu, kappa, theta, sigma_v, rho, v0, r=0.0, seed=None):
+    def __init__(self, S0, mu, sigma, kappa, theta, xi, rho, T, N, M, seed=None):
+        self.S0 = S0
         self.mu = mu
-        self.kappa = kappa
-        self.theta = theta
-        self.sigma_v = sigma_v
-        self.rho = rho
-        self.v0 = v0
-        self.r = r
+        self.sigma = sigma
+        self.kappa = kappa  # Rate of mean reversion
+        self.theta = theta  # Long-term variance
+        self.xi = xi        # Volatility of volatility
+        self.rho = rho      # Correlation between the two Brownian motions
+        self.T = T
+        self.N = N
+        self.M = M
         self.seed = seed
-
-    def generate_paths(self, S0, T, N, M, level=0):
-        """
-        Generates asset price paths using the Heston model.
+        if seed is not None:
+            np.random.seed(seed)
+    
+    def generate_paths(self):
+        dt = self.T / self.N
+        S = np.zeros((self.M, self.N + 1))
+        V = np.zeros((self.M, self.N + 1))
+        S[:, 0] = self.S0
+        V[:, 0] = self.sigma ** 2
         
-        Parameters:
-            S0 (float or array): Initial asset price(s).
-            T (float): Time to maturity.
-            N (int): Number of time steps at the base level.
-            M (int): Number of simulation paths.
-            level (int): MLMC level, higher levels have finer discretization.
-        
-        Returns:
-            S (array): Simulated asset price paths.
-        """
-        dt = T / (N * 2**level)
-        num_steps = N * 2**level
-        np.random.seed(self.seed)
-        S = np.zeros((M, num_steps + 1))
-        v = np.zeros((M, num_steps + 1))
-        S[:, 0] = S0
-        v[:, 0] = self.v0
-        for t in range(1, num_steps + 1):
-            Z1 = np.random.standard_normal(M)
-            Z2 = self.rho * Z1 + np.sqrt(1 - self.rho**2) * np.random.standard_normal(M)
-            v_prev = v[:, t-1]
-            v[:, t] = np.abs(v_prev + self.kappa * (self.theta - v_prev) * dt + 
-                            self.sigma_v * np.sqrt(v_prev * dt) * Z1)
-            S[:, t] = S[:, t-1] * np.exp((self.mu - 0.5 * v_prev) * dt + 
-                                         np.sqrt(v_prev * dt) * Z2)
+        for t in range(1, self.N + 1):
+            Z1 = np.random.standard_normal(self.M)
+            Z2 = self.rho * Z1 + np.sqrt(1 - self.rho ** 2) * np.random.standard_normal(self.M)
+            V[:, t] = np.maximum(V[:, t-1] + self.kappa * (self.theta - V[:, t-1]) * dt +
+                                 self.xi * np.sqrt(V[:, t-1] * dt) * Z1, 0)
+            S[:, t] = S[:, t-1] * np.exp((self.mu - 0.5 * V[:, t-1]) * dt +
+                                         np.sqrt(V[:, t-1] * dt) * Z2)
         return S
 
 class JumpDiffusionProcess(StochasticProcess):

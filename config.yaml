@@ -1,0 +1,12 @@
+parameters:
+  tickers: ["AAPL", "TSLA", "GOOGL"]
+  T: 30/252  # Time to maturity in years
+  N: 252  # Number of time steps
+  M: 100000  # Number of simulations
+  r: 0.05  # Risk-free rate
+models:
+  hyperparameter_tuning:
+    cv: 5
+    random_state: 42
+  ensemble:
+    final_estimator: "LinearRegression"
